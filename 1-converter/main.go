@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	USDtoEUR = 0.93
@@ -8,7 +10,22 @@ const (
 	EURtoRUB = USDtoRUB / USDtoEUR
 )
 
+func getInput() (result string) {
+	/* 
+	Пока заглушка
+	*/
+	result = "150 UDS RUB"
+	return 
+}
+
+func convert(amount float64, cur1, cur2 string) (result float64) {
+	/*
+	Пока заглушка
+	*/
+	result = 1200
+	return
+}
+
 func main() {
-	result := 50 * EURtoRUB
-	fmt.Printf("50 EUR равняется %.2f RUB\n", result)
+	fmt.Println("Программа с заглушками функций")
 }
