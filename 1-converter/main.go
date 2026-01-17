@@ -10,22 +10,7 @@ type Currency = string
 type CurrencyRate = float64
 type CurrencyRateMap = map[Currency]CurrencyRate
 type ExchangeRateMap = map[Currency]CurrencyRateMap
-type CurrencySet = map[Currency]bool
-
-var exchangeRate = ExchangeRateMap{
-	"USD": {
-		"EUR": 0.93,
-		"RUB": 72.10,
-	},
-	"EUR": {
-		"USD": 1 / 0.93,
-		"RUB": 72.10 / 0.93,
-	},
-	"RUB": {
-		"USD": 1 / 72.10,
-		"EUR": 0.93 / 72.10,
-	},
-}	
+type CurrencySet = map[Currency]bool	
 
 func getAmountFromInput() float64 {
 	var temp string
@@ -65,22 +50,22 @@ func getCurrencyFromInput(availableCurrencies CurrencySet) string {
 	}
 }
 
-func getFirstCurrency() string {
+func getFirstCurrency(exchangeRate *ExchangeRateMap) string {
 	fmt.Println("Какую валюту хотите обменять?")
 	return getCurrencyFromInput(func () CurrencySet {
 		keys := make(CurrencySet)
-		for k := range exchangeRate {
+		for k := range *exchangeRate {
 			keys[k] = true
 		}
 		return keys
 	}())
 }
 
-func getSecondCurrency(firstCurrency string) string {
+func getSecondCurrency(exchangeRate *ExchangeRateMap, firstCurrency string) string {
 	fmt.Println("Какую валюту хотите получить?")
 	return getCurrencyFromInput(func () CurrencySet {
 		keys := make(CurrencySet)
-		for k := range exchangeRate[firstCurrency] {
+		for k := range (*exchangeRate)[firstCurrency] {
 			if k != firstCurrency {
 				keys[k] = true
 			}
@@ -91,9 +76,25 @@ func getSecondCurrency(firstCurrency string) string {
 
 
 func main() {
+	
+	var exchangeRate = ExchangeRateMap{
+		"USD": {
+			"EUR": 0.93,
+			"RUB": 72.10,
+		},
+		"EUR": {
+			"USD": 1 / 0.93,
+			"RUB": 72.10 / 0.93,
+		},
+		"RUB": {
+			"USD": 1 / 72.10,
+			"EUR": 0.93 / 72.10,
+		},
+	}
+
 	fmt.Println("--- Добро пожаловать в калькулятор валют! ---")
-	firstCurrency := getFirstCurrency()
-	secondCurrency := getSecondCurrency(firstCurrency)
+	firstCurrency := getFirstCurrency(&exchangeRate)
+	secondCurrency := getSecondCurrency(&exchangeRate, firstCurrency)
 	amount := getAmountFromInput()
 	fmt.Printf(
 		"%.2f %s равняется %.2f %s",
