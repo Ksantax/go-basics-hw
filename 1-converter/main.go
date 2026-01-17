@@ -6,97 +6,89 @@ import (
 	"strings"
 )
 
-const (
-	USDtoEUR = 0.93
-	USDtoRUB = 72.10
-	EURtoRUB = USDtoRUB / USDtoEUR
-	EURtoUSD = 1 / USDtoEUR
-	RUBtoUSD = 1 / USDtoRUB
-	RUBtoEUR = USDtoEUR / USDtoRUB
-)
+type Currency = string
+type CurrencyRate = float64
+type CurrencyRateMap = map[Currency]CurrencyRate
+type ExchangeRateMap = map[Currency]CurrencyRateMap
+type CurrencySet = map[Currency]bool
 
-func getAmountFromInput() (amount float64) {
+var exchangeRate = ExchangeRateMap{
+	"USD": {
+		"EUR": 0.93,
+		"RUB": 72.10,
+	},
+	"EUR": {
+		"USD": 1 / 0.93,
+		"RUB": 72.10 / 0.93,
+	},
+	"RUB": {
+		"USD": 1 / 72.10,
+		"EUR": 0.93 / 72.10,
+	},
+}	
+
+func getAmountFromInput() float64 {
 	var temp string
-	var err error
-	for  {
+	for {
 		fmt.Print("Введите количество валюты, которую хотите обменять:")
 		fmt.Scan(&temp)
-		amount, err = strconv.ParseFloat(temp, 64)
+		amount, err := strconv.ParseFloat(temp, 64)
 		if err != nil {
 			fmt.Println("Введённое значение должно быть числом")
 		} else if amount <= 0 {
 			fmt.Println("Введённое значение должно быть положительным")
 		} else {
-			break
+			return amount
 		}
 	}
-	return
 }
 
-func getCurrencyFromInput() (currency string) {
+func getCurrencyFromInput(availableCurrencies CurrencySet) string {
+	var currency string
+	availableCurrenciesStr := strings.Join(func() []string {
+		keys := make([]string, 0, len(availableCurrencies))
+		for k := range availableCurrencies {
+			keys = append(keys, k)
+		}
+		return keys
+	}(), ", ")
+	fmt.Println("Доступные валюты:", availableCurrenciesStr)
 	for {
 		fmt.Print("Введите валюту: ")
 		fmt.Scan(&currency)
 		currency = strings.ToUpper(currency)
-		if currency == "RUB" || currency == "EUR" || currency == "USD" {
-			break
+		if availableCurrencies[currency] {
+			return currency
 		} else {
-			fmt.Print("Неверное значение для валюты или такая валюта не поддерживается")
+			fmt.Println("Неверное значение для валюты. Возможные варианты: ", availableCurrenciesStr)
 		}
 	}
-	return
 }
 
-func getFirstCurrency() (firstCurrency string) {
-	fmt.Println("Какую валюту хотите обменять?\nВозможные варианты: RUB, USD, EUR")
-	firstCurrency = getCurrencyFromInput()
-	return 
-}
-
-func getSecondCurrency(firstCurrency string) (secondCurrency string) {
-	var availableCurrencies string
-	switch firstCurrency {
-	case "RUB":
-		availableCurrencies = "USD, EUR"
-	case "USD":
-		availableCurrencies = "RUB, EUR"
-	default:
-		availableCurrencies = "RUB, USD"
-	}
-	fmt.Println("Какую валюту хотите получить?\nВозможные варианты:", availableCurrencies)
-	for secondCurrency = getCurrencyFromInput(); secondCurrency == firstCurrency; secondCurrency = getCurrencyFromInput() {
-		fmt.Println("Валюты не могут совпадать\nВозможные варианты:", availableCurrencies)
-	}
-	return
-}
-
-
-func convert(amount float64, firstCurrency, secondCurrency string) (result float64) {
-	switch firstCurrency {
-	case "RUB":
-		switch secondCurrency {
-		case "USD":
-			result = amount * RUBtoUSD
-		case "EUR":
-			result = amount * RUBtoEUR
+func getFirstCurrency() string {
+	fmt.Println("Какую валюту хотите обменять?")
+	return getCurrencyFromInput(func () CurrencySet {
+		keys := make(CurrencySet)
+		for k := range exchangeRate {
+			keys[k] = true
 		}
-	case "USD":
-		switch secondCurrency {
-		case "RUB":
-			result = amount * USDtoRUB
-		case "EUR":
-			result = amount * USDtoEUR
-		}
-	case "EUR":
-		switch secondCurrency {
-		case "RUB":
-			result = amount * EURtoRUB
-		case "USD":
-			result = amount * EURtoUSD
-		}
-	}
-	return
+		return keys
+	}())
 }
+
+func getSecondCurrency(firstCurrency string) string {
+	fmt.Println("Какую валюту хотите получить?")
+	return getCurrencyFromInput(func () CurrencySet {
+		keys := make(CurrencySet)
+		for k := range exchangeRate[firstCurrency] {
+			if k != firstCurrency {
+				keys[k] = true
+			}
+		}
+		return keys
+	}())
+}
+
 
 func main() {
 	fmt.Println("--- Добро пожаловать в калькулятор валют! ---")
@@ -104,8 +96,8 @@ func main() {
 	secondCurrency := getSecondCurrency(firstCurrency)
 	amount := getAmountFromInput()
 	fmt.Printf(
-		"%.2f %s равняется %.2f %s", 
+		"%.2f %s равняется %.2f %s",
 		amount, firstCurrency,
-		convert(amount, firstCurrency, secondCurrency), secondCurrency,
+		amount*exchangeRate[firstCurrency][secondCurrency], secondCurrency,
 	)
 }
